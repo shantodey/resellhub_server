@@ -30,21 +30,22 @@ async function run() {
   try {
 
     const db=client.db("ReSellHub");
-    const prodectCollection=db.collection('prodect');
+    const productCollection=db.collection('product');
     const ordersCollection=db.collection('orders');
     const reviewsCollection=db.collection('reviews');
     const paymentsCollection=db.collection('payments');
     
 
-    app.post("app/prodect",async(req,res)=>{
+    app.post("/app/product",async(req,res)=>{
+        console.log(req.body);
         const{title,category,condition,price,images,description,sellerInfo}=req.body;
         const addData={
             title,category,condition,price,images,description,sellerInfo ,
             createdAt:new Date(),
             status:"active"
         };
-        const result = await prodectCollection.insertOne(addData);
-        return result;
+        const result = await productCollection.insertOne(addData);
+        return res.send(result);
     })
 
 
