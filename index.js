@@ -1,4 +1,4 @@
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion,ObjectId } = require('mongodb');
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
@@ -50,9 +50,9 @@ async function run() {
         // api for sending new product data to database
         app.post("/app/product", async (req, res) => {
             console.log(req.body);
-            const { title, category, condition, price, images, description, sellerInfo } = req.body;
+            const { title, category, condition, price, quantity, images, description, sellerInfo } = req.body;
             const addData = {
-                title, category, condition, price, images, description, sellerInfo,
+                title, category, condition, price, quantity, images, description, sellerInfo,
                 createdAt: new Date(),
                 status: "active"
             };
@@ -60,11 +60,24 @@ async function run() {
             return res.send(result);
         })
 
-        // api for getting user data
-        // app.post('/api/user/:email',async(req,res)=>{
-        //     const {email}=req.params;
-        //     const result= await
-        // })
+
+        // api for getting Individual prodect data 
+        app.get("/app/product/:id", async (req, res) => {
+            try {
+                const id = req.params.id;
+                const query = { _id: new ObjectId(id) };
+                const result = await productCollection.findOne(query);
+
+                if (!result) {
+                    return res.status(404).send({ message: "Product not found" });
+                }
+
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ message: "Error fetching product details" });
+            }
+        });
 
         // for getting all the prodect listed by seller
         app.get("/app/my-products", async (req, res) => {
