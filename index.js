@@ -59,8 +59,28 @@ async function run() {
             return res.send(result);
         })
 
+        // api for getting user data
+        // app.post('/api/user/:email',async(req,res)=>{
+        //     const {email}=req.params;
+        //     const result= await
+        // })
 
+        // for getting all the prodect listed by seller
+        app.get("/app/my-products", async (req, res) => {
+            try {
+                const userEmail = req.query.email; // ক্লায়েন্ট থেকে আসা ইমেইল
+                if (!userEmail) {
+                    return res.status(400).send({ message: "Email is required" });
+                }
+                const query = { "sellerInfo.email": userEmail };
+                const result = await productCollection.find(query).toArray();
 
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ message: "Error fetching user products" });
+            }
+        });
 
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
