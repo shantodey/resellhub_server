@@ -60,6 +60,23 @@ async function run() {
             return res.send(result);
         })
 
+        app.put("/app/product/:id", async (req, res) => {
+            const { id } = req.params;
+            const updatedData = req.body;
+            try {
+                const result = await productCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: updatedData }
+                );
+                if (result.modifiedCount === 1) {
+                    res.send({ success: true, message: "Product updated successfully" });
+                } else {
+                    res.send({ success: false, message: "No changes made or product not found" });
+                }
+            } catch (error) {
+                res.status(500).send({ success: false, message: "Error updating product" });
+            }
+        });
 
         // api for deleting prodect data
         app.delete("/app/product/:id", async (req, res) => {
@@ -77,6 +94,7 @@ async function run() {
                 res.status(500).send({ success: false, message: "Error deleting product" });
             }
         });
+
         // api for getting Individual prodect data 
         app.get("/app/product/:id", async (req, res) => {
             try {
