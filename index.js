@@ -1,4 +1,4 @@
-const { MongoClient, ServerApiVersion,ObjectId } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
@@ -61,13 +61,22 @@ async function run() {
         })
 
 
-        // api for deleting prodect
-        app.delete("/app/product/:id", async (req, res) =>{
-            const {id}=req.params;
-            const result= await productCollection({_id: new ObjectId(id)});
-            res.send(result)
-        } )
+        // api for deleting prodect data
+        app.delete("/app/product/:id", async (req, res) => {
+            const { id } = req.params;
+            try {
+                const result = await productCollection.deleteOne({ _id: new ObjectId(id) });
 
+                if (result.deletedCount === 1) {
+                    res.send({ success: true, message: "Product deleted successfully" });
+                } else {
+                    res.status(404).send({ success: false, message: "Product not found" });
+                }
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ success: false, message: "Error deleting product" });
+            }
+        });
         // api for getting Individual prodect data 
         app.get("/app/product/:id", async (req, res) => {
             try {
