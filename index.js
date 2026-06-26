@@ -72,7 +72,8 @@ async function run() {
             const result = await productCollection.insertOne(addData);
             return res.send(result);
         })
-
+        
+        // api for updeting data for prodect
         app.put("/app/product/:id", async (req, res) => {
             const { id } = req.params;
             const updatedData = req.body;
