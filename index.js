@@ -61,6 +61,13 @@ async function run() {
         })
 
 
+        // api for deleting prodect
+        app.delete("/app/product/:id", async (req, res) =>{
+            const {id}=req.params;
+            const result= await productCollection({_id: new ObjectId(id)});
+            res.send(result)
+        } )
+
         // api for getting Individual prodect data 
         app.get("/app/product/:id", async (req, res) => {
             try {
@@ -95,6 +102,7 @@ async function run() {
                 res.status(500).send({ message: "Error fetching user products" });
             }
         });
+
 
 
         // api for updating profile
