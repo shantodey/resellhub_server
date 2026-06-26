@@ -34,6 +34,7 @@ async function run() {
         const ordersCollection = db.collection('orders');
         const reviewsCollection = db.collection('reviews');
         const paymentsCollection = db.collection('payments');
+        const userCollection = db.collection('user');
 
         // api for getting prodect data 
         app.get("/app/product", async (req, res) => {
@@ -81,6 +82,36 @@ async function run() {
                 res.status(500).send({ message: "Error fetching user products" });
             }
         });
+
+
+        // api for updating profile
+        app.patch("/app/user", async (req, res) => {
+            const { email, name, image } = req.body;
+            if (!email) {
+                return res.status(400).send({ message: "Email is required" });
+            }
+            const updateDoc = {
+                $set: {
+                    ...(name && { name: name.trim() }),
+                    ...(image && { image }),
+                    updatedAt: new Date()
+                }
+            };
+            try {
+                const result = await userCollection.updateOne({ email }, updateDoc);
+                if (!result.matchedCount) {
+                    return res.status(404).send({ message: "User not found" });
+                }
+                res.send({
+                    message: "Profile updated successfully",
+                    modifiedCount: result.modifiedCount
+                });
+            } catch (err) {
+                res.status(500).send({ message: "Internal Server Error" });
+            }
+        });
+
+
 
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
