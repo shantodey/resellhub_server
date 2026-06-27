@@ -42,21 +42,37 @@ async function run() {
                 const { search, category, sort } = req.query;
                 let query = {};
                 if (search && search.trim() !== "") {
-                    query.title = { $regex: search.trim(), $options: 'i' }; 
+                    query.title = { $regex: search.trim(), $options: 'i' };
                 }
                 if (category && category.trim() !== "") {
                     query.category = category.trim();
                 }
                 let result = await productCollection.find(query).toArray();
                 if (sort === 'price-low') {
-                    result.sort((a, b) => Number(a.price || 0) - Number(b.price || 0)); 
+                    result.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
                 } else if (sort === 'price-high') {
-                    result.sort((a, b) => Number(b.price || 0) - Number(a.price || 0)); 
+                    result.sort((a, b) => Number(b.price || 0) - Number(a.price || 0));
                 }
                 res.send(result);
             } catch (error) {
                 console.error("Backend Error:", error);
                 res.status(500).send({ message: "Error fetching products" });
+            }
+        });
+
+        // Get only the latest 3 products
+        app.get("/app/latest-products", async (req, res) => {
+            try {
+                const result = await productCollection
+                    .find({})
+                    .sort({ createdAt: -1 })
+                    .limit(3)
+                    .toArray();
+
+                res.send(result);
+            } catch (error) {
+                console.error("Backend Error:", error);
+                res.status(500).send({ message: "Error fetching latest products" });
             }
         });
 
@@ -67,12 +83,12 @@ async function run() {
             const addData = {
                 title, category, condition, price, quantity, images, description, sellerInfo,
                 createdAt: new Date(),
-                status: "active"
+                status: "pending"
             };
             const result = await productCollection.insertOne(addData);
             return res.send(result);
         })
-        
+
         // api for updeting data for prodect
         app.put("/app/product/:id", async (req, res) => {
             const { id } = req.params;
@@ -174,7 +190,6 @@ async function run() {
         });
 
 
-        // api for getting product data with filters
 
 
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
