@@ -195,7 +195,7 @@ async function run() {
             try {
                 const orderData = {
                     ...req.body,
-                    createdAt: new Date() 
+                    createdAt: new Date()
                 };
 
                 const result = await ordersCollection.insertOne(orderData);
@@ -219,6 +219,36 @@ async function run() {
             } catch (error) {
                 console.error("Fetch Orders Error:", error);
                 res.status(500).send({ success: false, message: "Error fetching checkout orders" });
+            }
+        });
+
+
+        //api for updating Payment status up the successful payment
+        app.patch("/app/orders/update-status", async (req, res) => {
+            try {
+                const { email } = req.query;
+                if (!email) {
+                    return res.status(400).send({ success: false, message: "Email is required" });
+                }
+                const query = {"buyerInfo.email": email,
+                    paymentStatus: "unpaid"
+                };
+
+                const updateDoc = {
+                    $set: {
+                        paymentStatus: "paid",
+                        orderStatus: "verified"
+                    }
+                };
+                const result = await ordersCollection.updateMany(query, updateDoc);
+                res.send({
+                    success: true,
+                    message: "Payment status updated successfully",
+                    modifiedCount: result.modifiedCount
+                });
+            } catch (error) {
+                console.error("Update Payment Status Error:", error);
+                res.status(500).send({ success: false, message: "Internal Server Error" });
             }
         });
 
