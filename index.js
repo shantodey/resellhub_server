@@ -190,7 +190,37 @@ async function run() {
         });
 
 
+        // api for creating a new order (With Quantity & Total Price)
+        app.post("/app/orders", async (req, res) => {
+            try {
+                const orderData = {
+                    ...req.body,
+                    createdAt: new Date() 
+                };
 
+                const result = await ordersCollection.insertOne(orderData);
+                res.status(201).send({ success: true, orderId: result.insertedId });
+            } catch (error) {
+                res.status(500).send({ success: false, message: "Internal Server Error" });
+            }
+        });
+
+        // API to get orders for a specific buyer using email query
+        app.get("/app/orders", async (req, res) => {
+            try {
+                const { email } = req.query;
+                if (!email) {
+                    return res.status(400).send({ success: false, message: "Email parameter is required" });
+                }
+                const query = { "buyerInfo.email": email };
+                const result = await ordersCollection.find(query).sort({ createdAt: -1 }).toArray();
+
+                res.send({ success: true, orders: result });
+            } catch (error) {
+                console.error("Fetch Orders Error:", error);
+                res.status(500).send({ success: false, message: "Error fetching checkout orders" });
+            }
+        });
 
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
