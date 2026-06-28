@@ -36,7 +36,7 @@ async function run() {
         const paymentsCollection = db.collection('payments');
         const userCollection = db.collection('user');
 
-        // api for getting prodect data && searching 
+        // api for getting all prodect data && searching 
         app.get("/app/product", async (req, res) => {
             try {
                 const { search, category, sort } = req.query;
@@ -88,6 +88,59 @@ async function run() {
             const result = await productCollection.insertOne(addData);
             return res.send(result);
         })
+
+
+
+
+
+
+
+        // apr for showing seller which of them are his order 
+        app.get("/app/seller/orders", async (req, res) => {
+            try {
+                const { email } = req.query;
+                if (!email) {  return res.status(400).send({ message: "Seller email is required" }); }
+                const query = {
+                    "sellerInfo.email": { $regex: `^${email.trim()}$`, $options: 'i' },
+                    orderStatus: { $in: ["pending", "accepted", "verified", "processing", "shipped"] }
+                };
+                const orders = await ordersCollection.find(query).sort({ createdAt: -1 }).toArray();
+                res.send(orders);
+            } catch (error) {
+                console.error("Fetch Seller Orders Error:", error);
+                res.status(500).send({ message: "Error fetching orders" });
+            }
+        });
+
+        //  api for Chang order status in Every single step 
+        app.post("/app/seller/orders/:id", async (req, res) => {
+            try {
+                const { id } = req.params;
+                const { action } = req.body; 
+                let nextStatus = "";
+                if (action === "process") nextStatus = "processing";
+                else if (action === "ship") nextStatus = "shipped";
+                else if (action === "deliver") nextStatus = "delivered";
+                else return res.status(400).send({ message: "Invalid action" });
+
+                const result = await ordersCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: { orderStatus: nextStatus, updatedAt: new Date() } }
+                );
+
+                res.send(result);
+            } catch (error) {
+                console.error("Update Seller Order Error:", error);
+                res.status(500).send({ message: "Action failed" });
+            }
+        });
+
+
+
+
+
+
+
 
         // api for updeting data for prodect
         app.put("/app/product/:id", async (req, res) => {
@@ -146,7 +199,7 @@ async function run() {
         // for getting all the prodect listed by seller
         app.get("/app/my-products", async (req, res) => {
             try {
-                const userEmail = req.query.email; // ক্লায়েন্ট থেকে আসা ইমেইল
+                const userEmail = req.query.email;
                 if (!userEmail) {
                     return res.status(400).send({ message: "Email is required" });
                 }
@@ -230,7 +283,8 @@ async function run() {
                 if (!email) {
                     return res.status(400).send({ success: false, message: "Email is required" });
                 }
-                const query = {"buyerInfo.email": email,
+                const query = {
+                    "buyerInfo.email": email,
                     paymentStatus: "unpaid"
                 };
 
@@ -251,6 +305,67 @@ async function run() {
                 res.status(500).send({ success: false, message: "Internal Server Error" });
             }
         });
+
+
+        // admin stef 
+
+        // Admin Dashboard Overview API (Total Counts)
+        app.get("/app/admin/overview", async (req, res) => {
+            try {
+                // parallelly দ্রুত ডকুমেন্ট কাউন্ট করার জন্য Promise.all এবং estimatedDocumentCount ব্যবহার করা হয়েছে
+                const [totalUsers, , totalOrders] = await Promise.all([
+                    db.collection('account').estimatedDocumentCount(),
+                    db.collection('orders').estimatedDocumentCount()
+                ]);
+
+                res.send({
+                    success: true,
+                    data: {
+                        totalUsers,
+                        totalOrders
+                    }
+                });
+            } catch (error) {
+                console.error("Admin Overview Fetch Error:", error);
+                res.status(500).send({ success: false, message: "Internal Server Error" });
+            }
+        });
+
+        // api for the admin to to rivew The product 
+
+        app.get("/app/admin/products", async (req, res) => {
+            const products = await productCollection.find({}).sort({ createdAt: -1 }).toArray();
+            res.send(products);
+        });
+
+
+        // ২. API for the admin to reject delete the product
+        app.post("/app/admin/product-action/:id", async (req, res) => {
+            try {
+                const { id } = req.params;
+                const { action } = req.body;
+
+                const query = { _id: new ObjectId(id) };
+                if (action === "delete") {
+                    const result = await productCollection.deleteOne(query);
+                    return res.send(result);
+                }
+                if (action === "approve" || action === "reject") {
+                    const statusValue = action === "approve" ? "approved" : "rejected";
+                    const result = await productCollection.updateOne(
+                        query,
+                        { $set: { status: statusValue, updatedAt: new Date() } }
+                    );
+                    return res.send(result);
+                }
+
+                res.status(400).send({ message: "Invalid action type" });
+            } catch (error) {
+                console.error("Backend Action Error:", error);
+                res.status(500).send({ message: "Action failed" });
+            }
+        });
+
 
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
