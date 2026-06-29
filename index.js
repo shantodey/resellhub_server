@@ -48,6 +48,17 @@ async function run() {
             }
         });
 
+        // getting all the user form the databse for herosection 
+        app.get("/app/admin/users", async (req, res) => {
+            try {
+                const users = await userCollection.find({}).sort({ createdAt: -1 }).toArray();
+                res.status(200).send(users);
+            } catch (error) {
+                console.error("Backend Error:", error);
+                res.status(500).send({ message: "Internal Server Error" });
+            }
+        });
+
         // api for getting all prodect data && searching 
         app.get("/app/product", async (req, res) => {
             try {
@@ -88,6 +99,25 @@ async function run() {
             }
         });
 
+        // API power getting data product delivery data
+        app.get("/app/all-orders", async (req, res) => {
+            try {
+                const result = await ordersCollection.find({}).sort({ createdAt: -1 }).toArray();
+                res.status(200).send(result);
+            } catch (error) {
+                res.status(500).send({ message: "Error fetching all orders" });
+            }
+        });
+
+
+
+
+
+
+        
+        // seller api
+
+
         // api for sending new product data to database
         app.post("/app/product", async (req, res) => {
             console.log(req.body);
@@ -100,12 +130,6 @@ async function run() {
             const result = await productCollection.insertOne(addData);
             return res.send(result);
         })
-
-
-
-
-
-
 
         // apr for showing seller which of them are his order 
         app.get("/app/seller/orders", async (req, res) => {
