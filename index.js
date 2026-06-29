@@ -37,16 +37,6 @@ async function run() {
         const userCollection = db.collection('user');
 
 
-        // api for getting product form the database and showin in herosection
-        app.get("/app/product", async (req, res) => {
-            try {
-                const result = await productCollection.find({}).toArray();
-                res.status(200).send(result);
-            } catch (error) {
-                console.error("Backend Error:", error);
-                res.status(500).send({ message: "Error fetching products" });
-            }
-        });
 
         // getting all the user form the databse for herosection 
         app.get("/app/admin/users", async (req, res) => {
@@ -59,10 +49,13 @@ async function run() {
             }
         });
 
-        // api for getting all prodect data && searching 
+        // api for getting all prodect data && searching paginatin and more
         app.get("/app/product", async (req, res) => {
             try {
                 const { search, category, sort } = req.query;
+                console.log(req.query);
+                const {page=1,limit=8}=req.query;
+                const skip =(Number(page)-1)*(Number(limit));
                 let query = {};
                 if (search && search.trim() !== "") {
                     query.title = { $regex: search.trim(), $options: 'i' };
@@ -70,15 +63,17 @@ async function run() {
                 if (category && category.trim() !== "") {
                     query.category = category.trim();
                 }
-                let result = await productCollection.find(query).toArray();
+                let result = await productCollection.find(query).skip(skip).limit(Number(limit)).toArray();
+                const totlaData= await productCollection.countDocuments();
+                const totalProdect= await productCollection.countDocuments();
+                const totalPage=Math.ceil(totlaData/Number(limit))
                 if (sort === 'price-low') {
                     result.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
                 } else if (sort === 'price-high') {
                     result.sort((a, b) => Number(b.price || 0) - Number(a.price || 0));
                 }
-                res.send(result);
+                res.send({data:result, page:Number(page),totalPage,totalProdect});
             } catch (error) {
-                console.error("Backend Error:", error);
                 res.status(500).send({ message: "Error fetching products" });
             }
         });
@@ -114,7 +109,7 @@ async function run() {
 
 
 
-        
+
         // seller api
 
 
